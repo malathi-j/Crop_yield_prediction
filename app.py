@@ -13,9 +13,7 @@ st.markdown("This app predicts **crop yield (tons/hectare)** based on environmen
 # Check for required model and encoder files
 required_files = [
     "crop_yield_model.pkl",
-    "le_crop.pkl",
-    "le_season.pkl",
-    "le_state.pkl"
+    "label_encoders(11).pkl"
 ]
 
 missing_files = [file for file in required_files if not os.path.exists(file)]
@@ -24,10 +22,8 @@ if missing_files:
     st.stop()
 
 # Load model and label encoders
-model = joblib.load("crop_yield_model.pkl")
-le_crop = joblib.load("le_crop.pkl")
-le_season = joblib.load("le_season.pkl")
-le_state = joblib.load("le_state.pkl")
+model = joblib.load("crop_yield_model.pkl"),
+model = joblib.load("label_encoders(11).pkl")
 
 # Input form
 with st.form("prediction_form"):
