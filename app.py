@@ -4,19 +4,23 @@ import numpy as np
 import joblib
 import os
 
-# Try loading model and encoders
-try:
-    model = joblib.load("crop_yield_model.pkl")
-    le_crop = joblib.load("le_crop.pkl")
-    le_season = joblib.load("le_season.pkl")
-    le_state = joblib.load("le_state.pkl")
-except FileNotFoundError as e:
-    st.error(f"❌ Required file not found: {e.filename}. Please make sure all .pkl files are in the same folder as this app.")
-    st.stop()
-
 # Title
 st.title("🌾 Crop Yield Prediction App")
-st.write("This app predicts **crop yield (tons/hectare)** using a trained ML model.")
+st.write("This app predicts **crop yield (tons/hectare)** using a trained machine learning model.")
+
+# Check if all necessary model files exist
+required_files = [
+    "crop_yield_model.pkl"
+]
+
+missing_files = [file for file in required_files if not os.path.exists(file)]
+if missing_files:
+    st.error(f"❌ Missing file(s): {', '.join(missing_files)}. Please upload all required `.pkl` files.")
+    st.stop()
+
+# Load model and encoders
+model = joblib.load("crop_yield_model.pkl")
+
 
 # Input form
 with st.form("prediction_form"):
@@ -32,23 +36,23 @@ with st.form("prediction_form"):
 
     submitted = st.form_submit_button("Predict Yield")
 
+# Prediction
 if submitted:
     try:
-        # Encode categorical values
-        crop_encoded = le_crop.transform([crop])[0]
-        season_encoded = le_season.transform([season])[0]
-        state_encoded = le_state.transform([state])[0]
-
-        # Prepare input
         input_data = pd.DataFrame([[
-            crop_encoded, crop_year, season_encoded, state_encoded,
-            area, production, annual_rainfall, fertilizer, pesticide
+            le_crop.transform([crop])[0],
+            crop_year,
+            le_season.transform([season])[0],
+            le_state.transform([state])[0],
+            area,
+            production,
+            annual_rainfall,
+            fertilizer,
+            pesticide
         ]], columns=['Crop', 'Crop_Year', 'Season', 'State', 'Area', 'Production',
                      'Annual_Rainfall', 'Fertilizer', 'Pesticide'])
 
-        # Prediction
         prediction = model.predict(input_data)[0]
         st.success(f"🌾 Predicted Yield: {prediction:.2f} tons/hectare")
-
     except Exception as e:
-        st.error(f"⚠️ Error during prediction: {str(e)}")
+        st.error(f"⚠️ Prediction error: {str(e)}")
