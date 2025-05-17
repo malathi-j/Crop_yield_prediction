@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -8,22 +9,20 @@ st.set_page_config(page_title="Crop Yield Prediction", layout="centered")
 
 # Title
 st.title("🌾 Crop Yield Prediction App")
-st.markdown("This app predicts **crop yield (tons/hectare)** based on environmental and agricultural inputs.")
+st.markdown("This app predicts **crop yield (tons/hectare)** using a trained machine learning model and label encoders.")
 
-# Check for required model and encoder files
-required_files = [
-    "crop_yield_model.pkl",
-    "label_encoders(11).pkl"
-]
-
-missing_files = [file for file in required_files if not os.path.exists(file)]
-if missing_files:
-    st.error(f"❌ Missing file(s): {', '.join(missing_files)}. Please make sure they are in the same folder.")
+# Check for required files
+if not os.path.exists("crop_yield_model.pkl") or not os.path.exists("label_encoders.pkl"):
+    st.error("❌ Required files not found. Please upload `crop_yield_model.pkl` and `label_encoders.pkl` to the same folder.")
     st.stop()
 
-# Load model and label encoders
-model = joblib.load("crop_yield_model.pkl"),
-model = joblib.load("label_encoders(11).pkl")
+# Load model and encoders
+model = joblib.load("crop_yield_model.pkl")
+encoders = joblib.load("label_encoders.pkl")
+
+le_crop = encoders["Crop"]
+le_season = encoders["Season"]
+le_state = encoders["State"]
 
 # Input form
 with st.form("prediction_form"):
@@ -48,4 +47,16 @@ if submitted:
         encoded_state = le_state.transform([state])[0]
 
         # Prepare input for prediction
-        input_df_
+        input_df = pd.DataFrame([[
+            encoded_crop, crop_year, encoded_season, encoded_state,
+            area, production, annual_rainfall, fertilizer, pesticide
+        ]], columns=[
+            'Crop', 'Crop_Year', 'Season', 'State',
+            'Area', 'Production', 'Annual_Rainfall', 'Fertilizer', 'Pesticide'
+        ])
+
+        # Predict
+        prediction = model.predict(input_df)[0]
+        st.success(f"🌾 **Predicted Yield: {prediction:.2f} tons/hectare**")
+    except Exception as e:
+        st.error(f"⚠️ Error during prediction: {str(e)}")
