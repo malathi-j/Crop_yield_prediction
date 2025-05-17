@@ -2,16 +2,21 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
+import os
 
-# Load model and label encoders
-model = joblib.load("crop_yield_model.pkl")
-le_crop = joblib.load("le_crop.pkl")
-le_season = joblib.load("le_season.pkl")
-le_state = joblib.load("le_state.pkl")
+# Try loading model and encoders
+try:
+    model = joblib.load("crop_yield_model.pkl")
+    le_crop = joblib.load("le_crop.pkl")
+    le_season = joblib.load("le_season.pkl")
+    le_state = joblib.load("le_state.pkl")
+except FileNotFoundError as e:
+    st.error(f"❌ Required file not found: {e.filename}. Please make sure all .pkl files are in the same folder as this app.")
+    st.stop()
 
-# Streamlit app
+# Title
 st.title("🌾 Crop Yield Prediction App")
-st.write("This app predicts **crop yield (tons/hectare)** using trained machine learning model.")
+st.write("This app predicts **crop yield (tons/hectare)** using a trained ML model.")
 
 # Input form
 with st.form("prediction_form"):
@@ -27,21 +32,23 @@ with st.form("prediction_form"):
 
     submitted = st.form_submit_button("Predict Yield")
 
-# Prediction
 if submitted:
     try:
-        # Encode categorical features
-        encoded_crop = le_crop.transform([crop])[0]
-        encoded_season = le_season.transform([season])[0]
-        encoded_state = le_state.transform([state])[0]
+        # Encode categorical values
+        crop_encoded = le_crop.transform([crop])[0]
+        season_encoded = le_season.transform([season])[0]
+        state_encoded = le_state.transform([state])[0]
 
+        # Prepare input
         input_data = pd.DataFrame([[
-            encoded_crop, crop_year, encoded_season, encoded_state,
+            crop_encoded, crop_year, season_encoded, state_encoded,
             area, production, annual_rainfall, fertilizer, pesticide
         ]], columns=['Crop', 'Crop_Year', 'Season', 'State', 'Area', 'Production',
                      'Annual_Rainfall', 'Fertilizer', 'Pesticide'])
 
+        # Prediction
         prediction = model.predict(input_data)[0]
         st.success(f"🌾 Predicted Yield: {prediction:.2f} tons/hectare")
+
     except Exception as e:
-        st.error(f"⚠️ Error: {str(e)}")
+        st.error(f"⚠️ Error during prediction: {str(e)}")
